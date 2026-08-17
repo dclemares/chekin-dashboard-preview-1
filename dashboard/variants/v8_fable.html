@@ -227,6 +227,19 @@
     .rl-ln{display:none}
     .rl{flex:1 1 40%}
   }
+  /* ds/_sidebar.css pins .app to a 280px first column with no breakpoint of
+     its own, which leaves ~95px of content on a phone. Overridden here rather
+     than in the design system, which 38 pages share and none of them handle
+     narrow screens — giving the L1 a real mobile pattern is its own job. */
+  @media (max-width:760px){
+    .app{grid-template-columns:1fr}
+    aside.l1{display:none}   /* matches the design system's own specificity */
+    .page{padding:20px 16px 48px}
+    .kpis{grid-template-columns:1fr}
+    header.top{padding:0 16px}
+    .hero{padding:22px 20px 20px}
+    .hero-row{gap:20px}
+  }
 </style>
 </head>
 <body>

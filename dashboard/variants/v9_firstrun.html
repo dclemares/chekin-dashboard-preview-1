@@ -202,6 +202,16 @@
     .kpis,.apps-grid{grid-template-columns:repeat(2,1fr)}
   }
   @media (max-width:860px){.rail .rl-ln{display:none}.rl{flex:1 1 40%}}
+  /* See the note in v8_fable: the shared sidebar has no narrow-screen rule,
+     so .app keeps a 280px column and squeezes the page to ~95px on a phone. */
+  @media (max-width:760px){
+    .app{grid-template-columns:1fr}
+    aside.l1{display:none}   /* matches the design system's own specificity */
+    .page{padding:20px 16px 48px}
+    .kpis,.apps-grid{grid-template-columns:1fr}
+    header.top{padding:0 16px}
+    .hero{padding:22px 20px 20px}
+  }
 </style>
 </head>
 <body>
