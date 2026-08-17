@@ -86,8 +86,13 @@
   .rl.active .lbl{color:#fff;font-weight:600}
   .rl.todo .bub{background:rgba(255,255,255,.10);color:#AEB7F5;border:1px solid rgba(255,255,255,.16)}
   .rl.todo .lbl{color:#AEB7F5}
-  .rl .lbl{font:500 12.5px var(--font-primary);white-space:nowrap}
+  /* Capped so an unusually long step title can't force the rail onto a second
+     row; the full text stays available via the title attribute. */
+  .rl .lbl{font:500 12.5px var(--font-primary);white-space:nowrap;max-width:210px;overflow:hidden;text-overflow:ellipsis}
   .rl-ln{flex:1;min-width:14px;height:1px;background:rgba(255,255,255,.16)}
+  /* Collapsed ends of the rail — quieter than a step, and not a target */
+  .rl-more{font:600 11.5px var(--font-primary);color:#8B93C9;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);border-radius:999px;padding:5px 11px;cursor:default;white-space:nowrap}
+  .rl-more:hover{background:rgba(255,255,255,.07)}
 
   /* ───── Guided setup ───── */
   .sechead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
@@ -142,6 +147,10 @@
   .apps-sec{display:none}
   .apps-sec.on{display:block}
   .apps-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .apps-toggle{background:none;border:none;cursor:pointer;font:600 12.5px var(--font-primary);color:var(--text-brand);padding:4px 2px}
+  .apps-toggle:hover{text-decoration:underline;text-underline-offset:3px}
+  .apps-note{font:400 12.5px/18px var(--font-primary);color:var(--text-gray-medium);margin:-6px 0 14px}
+  .app-card.hide{display:none}
   .app-card{background:#fff;border:1px solid var(--stroke-gray-lighter);border-radius:var(--radius-lg);padding:16px;display:flex;gap:12px;align-items:flex-start;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s;box-shadow:var(--shadow-card)}
   .app-card:hover{border-color:rgba(56,92,248,.32);box-shadow:var(--shadow-hover);transform:translateY(-2px)}
   .app-card .lg{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;color:#fff;font:800 14px var(--font-primary);flex-shrink:0}
@@ -265,7 +274,8 @@
       </section>
 
       <section class="apps-sec reveal" id="appsSec" style="animation-delay:.15s">
-        <div class="sechead"><h2 id="appsHead">Recommended apps for you</h2></div>
+        <div class="sechead"><h2 id="appsHead">Recommended apps for you</h2><button class="apps-toggle" id="appsToggle" type="button" aria-expanded="false"></button></div>
+        <p class="apps-note" id="appsNote"></p>
         <div class="apps-grid" id="appsGrid"></div>
       </section>
 
@@ -516,13 +526,30 @@
       : 'Recommended apps — run stays on autopilot';
     const seen = new Set();
     const grid = $('#appsGrid');
+    const cards = [];
     picked.flatMap(k => APPS[k]).forEach(a => {
       if (seen.has(a.n)) return; seen.add(a.n);
       const el = document.createElement('div');
       el.className = 'app-card';
       el.innerHTML = `<span class="lg" style="background:${a.bg}">${a.n[0]}</span><div><div class="t">${a.n}</div><div class="d">${a.d}</div></div><span class="add">Add</span>`;
       grid.appendChild(el);
+      cards.push(el);
     });
+
+    // Eight "Add" buttons directly under a card that says "one step at a time"
+    // is eight ways to not do the step. Show a few; the rest on request.
+    const SHOWN = 3;
+    const toggle = $('#appsToggle');
+    if (cards.length <= SHOWN){ toggle.remove(); return; }
+    $('#appsNote').textContent = 'Nothing to set up now — these stay here for when your plan is done.';
+    let open = false;
+    const apply = () => {
+      cards.forEach((c, i) => c.classList.toggle('hide', !open && i >= SHOWN));
+      toggle.textContent = open ? 'Show fewer' : `Show all ${cards.length}`;
+      toggle.setAttribute('aria-expanded', String(open));
+    };
+    toggle.addEventListener('click', () => { open = !open; apply(); });
+    apply();
   })();
 
   /* ───── Locked KPI teasers, per segment ───── */
@@ -584,15 +611,41 @@
       ? '<b>All done</b> · you\'re live 🎉'
       : `<b>${done} of ${steps.length}</b> done · ~${remaining} min left`;
 
+    // A full plan runs to 8 steps, which used to wrap into three ragged rows
+    // with a connector dangling off the last one. Show a window around the
+    // current step instead — the whole plan is listed in full alongside.
     const rail = $('#heroRail');
+    // 3 fits one row at the hero's ~1116px inner width even with the longest
+    // step labels ("Police reporting — SES.HOSPEDAJES"); 4 did not.
+    const MAX = 3;
     rail.innerHTML = '';
-    steps.forEach((s, i) => {
-      if (i > 0){ const ln = document.createElement('span'); ln.className = 'rl-ln'; rail.appendChild(ln); }
+    const start = Math.min(Math.max(done - 1, 0), Math.max(0, steps.length - MAX));
+    const end = Math.min(start + MAX, steps.length);
+
+    const pill = (text, cls) => {
+      const el = document.createElement('div');
+      el.className = 'rl rl-more ' + cls;
+      el.textContent = text;
+      return el;
+    };
+    const line = () => { const ln = document.createElement('span'); ln.className = 'rl-ln'; return ln; };
+
+    if (start > 0){
+      rail.appendChild(pill(`${start} done`, 'lead'));
+      rail.appendChild(line());
+    }
+    for (let i = start; i < end; i++){
+      if (i > start){ rail.appendChild(line()); }
       const el = document.createElement('div');
       el.className = 'rl ' + (i < done ? 'done' : i === done ? 'active' : 'todo');
-      el.innerHTML = `<span class="bub">${i < done ? check : i+1}</span><span class="lbl">${s.t}</span>`;
+      el.title = steps[i].t;
+      el.innerHTML = `<span class="bub">${i < done ? check : i+1}</span><span class="lbl">${steps[i].t}</span>`;
       rail.appendChild(el);
-    });
+    }
+    if (end < steps.length){
+      rail.appendChild(line());
+      rail.appendChild(pill(`+${steps.length - end} more`, 'trail'));
+    }
 
     const card = $('#currentCard');
     if (done >= steps.length){

@@ -809,9 +809,6 @@
     } else {
       steps.push({ k:'manual', phase:'Import', t:'Add your first property', d:'A guided form — import the rest later via spreadsheet.', eta:5 });
     }
-    if ((state.sizeTier ?? 0) >= 2){
-      steps.push({ k:'team', phase:'Import', t:'Invite your team', d:'Owners, managers and front desk — each with the right permissions.', eta:3 });
-    }
     // One police step per regulated country — schemes differ, credentials differ.
     // The main market goes first: that's where being non-compliant costs most.
     const regCountries = state.countries.filter(c => c.reg)
@@ -822,6 +819,13 @@
       steps.push({ k:'police', phase:'Legal', t:`Police reporting — ${c.scheme}`, d:`${c.name}${extra} — every guest submitted automatically, within the legal deadline.`, eta:4, scheme:c.scheme, country:c.name });
     });
     if (anyTax()) steps.push({ k:'tax', phase:'Legal', t:'Enable tourist tax auto-calculation', d:'Calculated and collected per stay, per your local rates.', eta:2 });
+    // Team comes after the legal steps. The plan claims to be ordered by what
+    // gets you live fastest, and inviting colleagues does not get you live —
+    // filing guests legally does. Phase is Operations so the grouped plan
+    // list doesn't reopen an Import section it already closed.
+    if ((state.sizeTier ?? 0) >= 2){
+      steps.push({ k:'team', phase:'Operations', t:'Invite your team', d:'Owners, managers and front desk — each with the right permissions.', eta:3 });
+    }
     if (state.prios.includes('ops')){
       steps.push({ k:'ops', phase:'Operations', t:'Set up your operations hub', d:'Guest inbox, smart locks, and cleaning turnovers that schedule themselves.', eta:6 });
     }
