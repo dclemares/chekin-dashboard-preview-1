@@ -997,7 +997,11 @@
   $('#btnBack').addEventListener('click', () => show(step - 1));
   // Leaving early keeps whatever has been answered so far — the old handler
   // dropped it all on the floor, so coming back meant starting from zero.
-  $('#btnSkip').addEventListener('click', () => { savePlan(); goTop('fable'); });
+  // Nothing answered means nothing to keep: writing an empty plan would leave
+  // the first-run home rendering a plan built from no answers at all.
+  const answered = () => state.countries.length || state.ptype || state.size
+    || state.manage || state.prios.length;
+  $('#btnSkip').addEventListener('click', () => { if (answered()) savePlan(); goTop('fable'); });
 
   /* ───── Demo presets: ?demo=compliance|ops|cleaning ───── */
   const demo = new URLSearchParams(location.search).get('demo');

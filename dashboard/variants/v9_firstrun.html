@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Chekin — First-run Home (Fable 5)</title>
 <link rel="stylesheet" href="../ds/colors_and_type.css">
 <link rel="stylesheet" href="../ds/_sidebar.css">
@@ -319,8 +320,15 @@
   /* ───── Vocabulary + hero copy per segment ───── */
   const PTYPE_LABELS = { vr:'vacation rentals', hotel:'hotel / aparthotel', camping:'camping / glamping', other:'properties' };
   const tp = plan.ptype === 'other' && plan.ptypeOther ? plan.ptypeOther.toLowerCase() : (PTYPE_LABELS[plan.ptype] || 'properties');
-  const flags = (plan.countries||[]).map(c => c.flag).join(' ');
-  $('#greetLine').textContent = `${flags} ${plan.size || ''} ${unit} · ${tp}`;
+  // Lead with the main market when one was picked, then selection order.
+  const flags = (plan.countries||[]).slice()
+    .sort((a, b) => (b.code === plan.primary) - (a.code === plan.primary))
+    .map(c => c.flag).join(' ');
+  // Built from the parts that actually exist: a half-answered plan used to
+  // render "  properties · properties".
+  const head = [flags, plan.size ? `${plan.size} ${unit}` : ''].filter(Boolean).join(' ');
+  const greetLine = [head, plan.ptype ? tp : ''].filter(Boolean).join(' · ');
+  if (greetLine) $('#greetLine').textContent = greetLine;
 
   if (!regulated && prios.includes('revenue')){
     $('#heroH1').textContent = "Let's get you earning more 💸";

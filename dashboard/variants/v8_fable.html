@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Chekin — Dashboard Home (Fable 5)</title>
 <link rel="stylesheet" href="../ds/colors_and_type.css">
 <link rel="stylesheet" href="../ds/_sidebar.css">
@@ -68,6 +69,9 @@
   .hero-row{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center;gap:32px;flex-wrap:wrap}
   .hero .greet{font:500 13px var(--font-primary);color:#B9C2FF;letter-spacing:.02em;display:flex;align-items:center;gap:8px}
   .hero .greet .dot{width:6px;height:6px;border-radius:50%;background:var(--icon-success-light);box-shadow:0 0 0 4px rgba(53,229,188,.18)}
+  /* Amber when the line reports something outstanding — a green "all clear"
+     dot next to a due deadline is the page arguing with itself. */
+  .hero .greet .dot.due{background:#F0A82C;box-shadow:0 0 0 4px rgba(240,168,44,.20)}
   .hero h1{font:700 28px/34px var(--font-primary);margin:8px 0 0;letter-spacing:-.015em;color:#fff}
   .hero h1 .wave{display:inline-block;transform-origin:70% 70%;animation:wave 2.6s ease-in-out 2;margin-left:4px}
   @keyframes wave{0%,60%,100%{transform:rotate(0)}10%{transform:rotate(14deg)}20%{transform:rotate(-8deg)}30%{transform:rotate(14deg)}40%{transform:rotate(-4deg)}50%{transform:rotate(10deg)}}
@@ -244,9 +248,9 @@
       <section class="hero reveal" style="animation-delay:.02s">
         <div class="hero-row">
           <div>
-            <div class="greet"><span class="dot"></span>Saturday, 18 July 2026 · everything running smoothly</div>
+            <div class="greet"><span class="dot due"></span>Saturday, 18 July 2026 · 1 police report due today</div>
             <h1>Welcome back <span class="wave">👋</span></h1>
-            <div class="sub">You're two steps from going live. Connect a channel and set up police reporting to unlock fully automated check-in.</div>
+            <div class="sub">Three steps left to go live. Connect a channel and set up police reporting to unlock fully automated check-in.</div>
             <div class="actions">
               <button class="btn-hero solid">Connect a channel <svg viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
               <button class="btn-hero ghost">Preview guest flow</button>
@@ -382,33 +386,30 @@
           <h3>Compliance health</h3>
           <p class="psub">Across your active regulations</p>
           <div class="comp">
+            <!-- Donut, percentage and legend are all computed from the rows
+                 below, so the three can no longer disagree. -->
             <div class="donut">
               <svg width="96" height="96" viewBox="0 0 96 96">
                 <circle cx="48" cy="48" r="40" fill="none" stroke="#F0F1F7" stroke-width="10"/>
-                <!-- 75% ok (green), 25% due (amber): circumference ~251.3 -->
-                <circle cx="48" cy="48" r="40" fill="none" stroke="#0F9F80" stroke-width="10" stroke-linecap="round" stroke-dasharray="188.5 251.3" stroke-dashoffset="0"/>
-                <circle cx="48" cy="48" r="40" fill="none" stroke="#F0A82C" stroke-width="10" stroke-linecap="round" stroke-dasharray="62.8 251.3" stroke-dashoffset="-188.5"/>
+                <circle id="compOk"  cx="48" cy="48" r="40" fill="none" stroke="#0F9F80" stroke-width="10" stroke-linecap="round" stroke-dasharray="0 251.3" stroke-dashoffset="0"/>
+                <circle id="compDue" cx="48" cy="48" r="40" fill="none" stroke="#F0A82C" stroke-width="10" stroke-linecap="round" stroke-dasharray="0 251.3" stroke-dashoffset="0"/>
               </svg>
-              <div class="ctr"><span class="n">75%</span><span class="l">Healthy</span></div>
+              <div class="ctr"><span class="n" id="compPct">—</span><span class="l">Healthy</span></div>
             </div>
-            <div class="comp-legend">
-              <div class="lg"><span class="sw" style="background:#0F9F80"></span>Up to date <b>3</b></div>
-              <div class="lg"><span class="sw" style="background:#F0A82C"></span>Action needed <b>1</b></div>
-              <div class="lg"><span class="sw" style="background:#F0F1F7"></span>Not configured <b>1</b></div>
-            </div>
+            <div class="comp-legend" id="compLegend"></div>
           </div>
-          <div class="comp-rows">
-            <div class="crow">
+          <div class="comp-rows" id="compRows">
+            <div class="crow" data-state="due">
               <div class="flag">🇪🇸</div>
               <div class="ct"><div class="t">SES.HOSPEDAJES</div><div class="d">Spain · national police</div></div>
               <span class="st due"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>1 due</span>
             </div>
-            <div class="crow">
+            <div class="crow" data-state="ok">
               <div class="flag">🏛️</div>
               <div class="ct"><div class="t">Mossos d'Esquadra</div><div class="d">Catalonia · regional</div></div>
               <span class="st ok"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>OK</span>
             </div>
-            <div class="crow">
+            <div class="crow" data-state="ok">
               <div class="flag">🧾</div>
               <div class="ct"><div class="t">Tourist tax · Madrid</div><div class="d">Auto-calculated per stay</div></div>
               <span class="st ok"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>OK</span>
@@ -468,6 +469,34 @@
       }
       requestAnimationFrame(tick);
     });
+  })();
+
+  // Compliance health derives from the rows, so the donut, the percentage and
+  // the legend cannot drift apart from each other or from what's listed.
+  (function(){
+    const rows = document.querySelectorAll('#compRows .crow');
+    if (!rows.length) return;
+    const CIRC = 251.3;
+    const count = s => [...rows].filter(r => r.dataset.state === s).length;
+    const ok = count('ok'), due = count('due'), off = count('off');
+    const total = rows.length;
+
+    document.getElementById('compPct').textContent = Math.round(ok / total * 100) + '%';
+    const okLen = ok / total * CIRC, dueLen = due / total * CIRC;
+    document.getElementById('compOk').setAttribute('stroke-dasharray', `${okLen.toFixed(1)} ${CIRC}`);
+    const dueArc = document.getElementById('compDue');
+    dueArc.setAttribute('stroke-dasharray', `${dueLen.toFixed(1)} ${CIRC}`);
+    dueArc.setAttribute('stroke-dashoffset', String(-okLen.toFixed(1)));
+
+    // Zero-count states are dropped rather than shown as an empty category
+    const legend = [
+      { n:ok,  c:'#0F9F80', t:'Up to date' },
+      { n:due, c:'#F0A82C', t:'Action needed' },
+      { n:off, c:'#F0F1F7', t:'Not configured' },
+    ].filter(x => x.n > 0);
+    document.getElementById('compLegend').innerHTML = legend.map(x =>
+      `<div class="lg"><span class="sw" style="background:${x.c}"></span>${x.t} <b>${x.n}</b></div>`
+    ).join('');
   })();
 </script>
 </body>
