@@ -199,6 +199,7 @@
   .crow .st svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.6}
   .crow .st.ok{color:var(--success);background:var(--bg-success-light)}
   .crow .st.due{color:var(--text-warn);background:var(--warn-bg)}
+  .crow .st.off{color:var(--text-gray-dark);background:var(--bg-neutral-light)}
   .comp-cta{margin-top:12px;padding-top:12px;border-top:1px solid var(--stroke-gray-lighter)}
   .comp-cta a{font:600 13px var(--font-primary);color:var(--text-brand);cursor:pointer;display:inline-flex;align-items:center;gap:5px}
   .comp-cta a svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2}
@@ -414,15 +415,19 @@
             <div class="comp-legend" id="compLegend"></div>
           </div>
           <div class="comp-rows" id="compRows">
-            <div class="crow" data-state="due">
+            <!-- Police reporting is step 3 of setup and still to do, so neither
+                 scheme can be filing anything yet. The report Lena Fischer
+                 triggered is still legally due — that obligation is what the
+                 hero and the agenda report; this panel reports our coverage. -->
+            <div class="crow" data-state="off">
               <div class="flag">🇪🇸</div>
-              <div class="ct"><div class="t">SES.HOSPEDAJES</div><div class="d">Spain · national police</div></div>
-              <span class="st due"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>1 due</span>
+              <div class="ct"><div class="t">SES.HOSPEDAJES</div><div class="d">Spain · national police · 1 report due</div></div>
+              <span class="st off"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Not set up</span>
             </div>
-            <div class="crow" data-state="ok">
+            <div class="crow" data-state="off">
               <div class="flag">🏛️</div>
               <div class="ct"><div class="t">Mossos d'Esquadra</div><div class="d">Catalonia · regional</div></div>
-              <span class="st ok"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>OK</span>
+              <span class="st off"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Not set up</span>
             </div>
             <div class="crow" data-state="ok">
               <div class="flag">🧾</div>
